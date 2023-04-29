@@ -317,7 +317,7 @@ public static List<Point> generatePoint(int amount){
 ```
 ## Графики
 Сырые данные для графиков представлены в [таблице](https://github.com/Max-Size/ADS_Lab2/blob/main/Lab_2.xlsx)  
-Для тестирования использовалось совпадающее количество прямоугольников и точек во всех случаях  
+Для тестирования использовалось совпадающее количество прямоугольников и точек во всех случаях, само тестирование происходило в файле [Main](https://github.com/Max-Size/ADS_Lab2/blob/main/src/Main.java)   
 Результаты по времени подготовки
 
 ![Preparing_res](https://user-images.githubusercontent.com/125485047/235325632-de4c781b-5fb5-44f4-a5b5-ca3bcab7ddeb.png)
