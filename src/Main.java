@@ -2,8 +2,9 @@
 public class Main {
 
     public static void main(String[] args) {
-        Storage.rectangles = Generator.generateRectangles(500);
-        Storage.points = Generator.generatePoint(500);
+        int amountOfRectanglesAndPoints=0;
+        Storage.rectangles = Generator.generateRectangles(amountOfRectanglesAndPoints);
+        Storage.points = Generator.generatePoint(amountOfRectanglesAndPoints);
         BruteForce bruteForce = new BruteForce();
         long start = System.nanoTime();
         for (Point point : Storage.points) {
