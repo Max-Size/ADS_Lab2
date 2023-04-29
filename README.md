@@ -208,4 +208,123 @@ public void makeEvents(){
     Event.sortEvents(events);
 }
 ```
-Для сжатия используем метод объекта класса `Compressor` как и во втором алгоритме
+Для сжатия используем метод объекта класса `Compressor` как и во втором алгоритме  
+Далее по этим `Event` будем строить деревья, сначала я строю пустое дерево с количеством листьев равным степени 2, для удобства при построении дерева
+```java
+public static double log2(int x){
+    return Math.log(x) / Math.log(2);
+}
+public Node buildEmptyTree(int leftIndex,int rightIndex){
+    if(log2(rightIndex+1)%1!=0){
+        return buildTree(leftIndex,(int)Math.pow(2,(double)(int)log2(rightIndex)+1)-1);
+    }
+    return buildTree(leftIndex, rightIndex);
+}
+public Node buildTree(int leftIndex,int rightIndex){
+    if(leftIndex==rightIndex){
+        return new Node(null,null,0,leftIndex,rightIndex);
+    }
+    else{
+        int midIndex=(leftIndex+rightIndex)/2;
+        Node left = buildTree(leftIndex,midIndex);
+        Node right = buildTree(midIndex+1,rightIndex);
+        return new Node(left,right,0,leftIndex,rightIndex);
+    }
+}
+```
+После этого строю персистетно для каждого `x` свою версию дерева
+```java
+public Node updateTreePersistent(Event event,Node node){
+    if(node.start_coordinate>= event.compressedDownY && node.end_coordinate<= event.compressedUpy){
+        node = new Node(node);
+        node.modifier+=event.type;
+        return node;
+    }else
+    if((node.start_coordinate<= event.compressedDownY && node.end_coordinate > event.compressedUpy) ||
+            (node.start_coordinate< event.compressedDownY && node.end_coordinate >= event.compressedUpy) ||
+            (node.start_coordinate> event.compressedDownY && node.start_coordinate<= event.compressedUpy && node.end_coordinate> event.compressedUpy)||
+            (node.start_coordinate< event.compressedDownY && node.end_coordinate>=event.compressedDownY && node.end_coordinate<event.compressedUpy)){
+        node = new Node(node);
+        node.left = updateTreePersistent(event,node.left);
+        node.right = updateTreePersistent(event,node.right);
+        return node;
+    }
+    return node;
+}
+```
+И в конце концов используя все выше перечисленные методы, строю все деревья, где каждый `root[i]` хранит свою версию дерева для конкретного `x`
+```java
+Node[] roots;
+public void buildAllTrees(){
+    roots= new Node[compressor1.listX.length];
+    int eventsIndex=0;
+    for(int i=0;i< roots.length;i++){
+        if(i==0){
+            roots[i]=buildEmptyTree(0,compressor1.listY.length-1);
+        }else if(roots[i]==null){
+            roots[i]=updateTreePersistent(events.get(eventsIndex),roots[i-1]);
+            if(eventsIndex<events.size()-1){
+                eventsIndex++;
+            }
+        }
+        while (events.get(eventsIndex).x==i && eventsIndex<events.size()-1){
+            roots[i]=updateTreePersistent(events.get(eventsIndex),roots[i]);
+            eventsIndex++;
+        }
+    }
+}
+```
+Чтобы получить ответ по этим деревьям, сначала необходимо найти свою версию по `x`, а затем пройти от корня прибавляя к ответу значения модфикаторов вплоть до листа, который определяется в зависимости `y` конкретной точки
+```java
+public int getSumFromTree(Node node,int y){
+    if(y==node.end_coordinate && y==node.start_coordinate){
+        return node.modifier;
+    }
+    int midVal = (node.start_coordinate+node.end_coordinate)/2;
+    if(y>midVal){
+        return getSumFromTree(node.right,y)+ node.modifier;
+    }else{
+        return getSumFromTree(node.left,y)+ node.modifier;
+    }
+}
+public int getAnswer(Point point){
+    if(point.x<compressor1.listX[0] || point.x>compressor1.listX[compressor1.listX.length-1] ||
+    point.y < compressor1.listY[0] || point.y >compressor1.listY[compressor1.listY.length-1]){
+        return 0;
+    }
+    int compressedX = compressor1.getCompressedCoordinate(compressor1.listX, point.x);
+    int compressedY = compressor1.getCompressedCoordinate(compressor1.listY, point.y);
+    return getSumFromTree(roots[compressedX],compressedY);
+}
+```
+## Тестирование
+Для генерации набора прямоугольников и точек запросы использовались рекомендации указанные к работе
+```java
+public static List<Rectangle> generateRectangles(int amount){
+    List<Rectangle> rectangles = new ArrayList<>(amount);
+    for(int i=0;i<amount;i++){
+        rectangles.add(new Rectangle(10L *i, 10L *i, 10L * (2L *amount-i), 10L *(2L *amount-i)));
+    }
+    return rectangles;
+}
+public static List<Point> generatePoint(int amount){
+    List<Point> points = new ArrayList<>(amount);
+    for(int i=0;i<amount;i++){
+        points.add(new Point((long) (Math.pow(4723*i,31)%(20*amount)), (long) (Math.pow(4789*i,31)%(20*amount))));
+    }
+    return  points;
+}
+```
+## Графики
+Сырые данные для графиков представлены в таблице 
+Для тестирования использовалось совпадающее количество прямоугольников и точек во всех случаях  
+Результаты по времени подготовки
+
+![Preparing_res](https://user-images.githubusercontent.com/125485047/235325632-de4c781b-5fb5-44f4-a5b5-ca3bcab7ddeb.png)
+
+Результаты по времени получения ответа
+
+![Answering_res](https://user-images.githubusercontent.com/125485047/235325697-f5f289d2-5d95-42ed-9920-75c6efc4529b.png)
+
+## Выводы
+Судя по результатам тестов, можно сказать, что алгоритм на карте будет малоэффективен на большом колчиестве прямоугольников, так как на построение карты уходит слишком много времени `O(N^3)`. Однако на большом количестве запросов - карта является самым эффективным инструментом, так как по факту чтобы получить ответ на запрос этот алгоритм тратит не более `2logN` операций, в то время как его главный конкурент - алгоритм на дереве тратит слегка больше времени на получение ответа: `3logN`, так как ему еще приходится потратить `logN` операций на поиск ответа в дереве. Но зато алгоритм на дереве является более эффективным в среднем, так как на подготовку данных он тратит `O(NlogN)` времени, что очевидно лучше кубической сложности. Также наивный алгоритм хорош, если не требуется отвечать на большое количество запросов, ведь на поиск ответа он тратит `O(N^2)`, на зато совсем не требует времени на подготовку, что является достаточно весомым плюсом, но разве что в случае с небольшим количеством запросов.
