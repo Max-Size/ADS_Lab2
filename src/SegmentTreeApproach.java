@@ -10,23 +10,6 @@ public class SegmentTreeApproach {
     public static double log2(int x){
         return Math.log(x) / Math.log(2);
     }
-    /*static void printLevelOrder(Node root) {
-        Queue<Node> queue = new LinkedList<Node>();
-        queue.add(root);
-        while (!queue.isEmpty()) {
-            Node temp = queue.poll();
-            System.out.print(temp+" "+temp.start_coordinate+" "+temp.end_coordinate+" val:"+temp.modifier+ " ");
-
-            if (temp.left != null) {
-                queue.add(temp.left);
-            }
-
-            if (temp.right != null) {
-                queue.add(temp.right);
-            }
-        }
-        System.out.println();
-    }*/
     public void makeEvents(){
         compressor1.makeListsX_Y(Storage.rectangles);
         for(Rectangle rectangle:Storage.rectangles){
@@ -56,26 +39,6 @@ public class SegmentTreeApproach {
             return new Node(left,right,0,leftIndex,rightIndex);
         }
     }
-    /*public void updateTree(Event event,Node node){
-        if(node.start_coordinate>= event.compressedDownY && node.end_coordinate<= event.compressedUpy){
-            System.out.println();
-            System.out.print(node+" "+node.start_coordinate+" "+ node.end_coordinate+" val:"+node.modifier+" changing--> ");
-            node.modifier+=event.type;
-            System.out.println(node+" "+node.start_coordinate+" "+ node.end_coordinate+" val:"+node.modifier+" changed");
-        }
-        if((node.start_coordinate<= event.compressedDownY && node.end_coordinate > event.compressedUpy) ||
-                (node.start_coordinate< event.compressedDownY && node.end_coordinate >= event.compressedUpy) ||
-                (node.start_coordinate> event.compressedDownY && node.start_coordinate<= event.compressedUpy && node.end_coordinate> event.compressedUpy)||
-                (node.start_coordinate< event.compressedDownY && node.end_coordinate>=event.compressedDownY && node.end_coordinate<event.compressedUpy)){
-            //updateTree(event,node.left);
-            //updateTree(event,node.right);
-        }
-        if((node.start_coordinate < event.compressedDownY && node.start_coordinate < event.compressedUpy) ||
-                node.start_coordinate > event.compressedDownY && node.start_coordinate > event.compressedUpy){
-            return;
-        }
-    }*/
-
     public Node updateTreePersistent(Event event,Node node){
         if(node.start_coordinate>= event.compressedDownY && node.end_coordinate<= event.compressedUpy){
             node = new Node(node);
@@ -131,15 +94,4 @@ public class SegmentTreeApproach {
         int compressedY = compressor1.getCompressedCoordinate(compressor1.listY, point.y);
         return getSumFromTree(roots[compressedX],compressedY);
     }
-    /*public void print(){
-        for(Event event: events){
-            System.out.print(event.toString()+" ");
-        }
-    }*/
-    /*public void printTrees(){
-        for(Node root:roots){
-            printLevelOrder(root);
-            System.out.println();
-        }
-    }*/
 }
