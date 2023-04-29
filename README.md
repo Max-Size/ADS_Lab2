@@ -143,4 +143,69 @@ Compress compressor = new Compress();
  ```
  ### Дерево отрезков
  Для работы этого алгоритма необходимо создать персистентное дерево отрезков, где каждая версия этого дерева - столбец  
- Для боковых
+ Сначала необходимо определить вспомогательные классы `Event` - для левой и правой стороны квадрата, который будет отражать диапозон по `y` открытия и закрытия прямоугольника и `Node` для узлов дерева
+ ```java
+ import java.util.Comparator;
+import java.util.List;
+
+public class Event {
+    int x;
+    int compressedDownY;
+    int compressedUpy;
+    int type; // 1 - opening; -1 - closing
+    Event(int x,int compressedDownY,int compressedUpy,int type){
+        this.x=x;
+        this.compressedDownY=compressedDownY;
+        this.compressedUpy=compressedUpy;
+        this.type=type;
+    }
+    public static void sortEvents(List<Event> events){
+        Comparator<Event> comparator = (e1, e2) -> e1.x-e2.x;
+        events.sort(comparator);
+    }
+}
+```
+```java
+public class Node {
+    Node left;
+    Node right;
+    int modifier;
+    int start_coordinate;
+    int end_coordinate;
+    Node(){
+
+    }
+    Node(Node left,Node right,int modifier,int start_coordinate,int end_coordinate){
+        this.left=left;
+        this.right=right;
+        this.modifier=modifier;
+        this.start_coordinate=start_coordinate;
+        this.end_coordinate=end_coordinate;
+    }
+    Node(Node node){
+        this.left=node.left;
+        this.right=node.right;
+        this.modifier=node.modifier;
+        this.start_coordinate=node.start_coordinate;
+        this.end_coordinate= node.end_coordinate;
+    }
+}
+```
+Первым шагом необходимо создать список `events` и отсортровать их по `x`, чтобы было удобнее пробегаться по ним при построении деревьев
+```java
+Compress compressor1 = new Compress();
+public List<Event> events = new ArrayList<>();
+public void makeEvents(){
+    compressor1.makeListsX_Y(Storage.rectangles);
+    for(Rectangle rectangle:Storage.rectangles){
+        int compressedLeftX=compressor1.getCompressedCoordinate(compressor1.listX,rectangle.leftDown.x);
+        int compressedDownY=compressor1.getCompressedCoordinate(compressor1.listY,rectangle.leftDown.y);
+        int compressedRightX=compressor1.getCompressedCoordinate(compressor1.listX,rectangle.rightUp.x);
+        int compressedUpY=compressor1.getCompressedCoordinate(compressor1.listY,rectangle.rightUp.y);
+        events.add(new Event(compressedLeftX,compressedDownY,compressedUpY-1,1));
+        events.add(new Event(compressedRightX,compressedDownY,compressedUpY-1,-1));
+    }
+    Event.sortEvents(events);
+}
+```
+Для сжатия используем метод объекта класса `Compressor` как и во втором алгоритме
